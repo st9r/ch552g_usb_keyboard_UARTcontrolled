@@ -1,37 +1,29 @@
 # USB Mini Keyboard with CH552G
+![telegram-cloud-photo-size-2-5289929060786500294-y](https://github.com/user-attachments/assets/d19ecbac-7c16-4ff5-8c06-5418462fbd20)
 
 ## Introduction
-This project began with the purchase of a compact USB keyboard with three keys from AliExpress, seemingly without any specific purpose in mind. The original software required for this keyboard was provided as a .exe file, which I downloaded from a Google Drive repository. However, since I don't have access to a Windows PC to test it, I'm quite certain that most antivirus software would not approve of it.
-
-I decided to open it and try to program it myself.
-
-![Keyboard](img/keyboard.jpeg)
-
-![Menu](img/key_menu.gif?raw=true)
-
-Change keyboard config rotating the encoder while is pressed
+NON DESTRUCTIVE MOD which allows to integrate cheap CH552G keyboard with various car projects.
+In my case - for extending CDC Emulator SWC functionality with USB HID for Android HU to navigate thru CarPlay.  
 
 
 ## What's Inside
+UART1 & UART0 use alternative PINS, which allows to use mechanical keys and rotary encoder also.
+CH552G RX pin is on P3.4 (PIN11)
+![image](https://github.com/user-attachments/assets/a22c0102-b9b1-4c27-bd00-e2eef4785380)
 
-The core of the board features a wch-ic CH552G microcontroller, three buttons, a rotary encoder, and three addressable LEDs.
-
-![Bottom](img/bottom.jpeg?raw=true)
-
-## CH552G microcontroller
-
-![CH552G](img/ch552g.png?raw=true)
+UART1 preconfigured to 38400 
+![telegram-cloud-photo-size-2-5289929060786500295-y](https://github.com/user-attachments/assets/32652e06-cee6-4262-87ae-ccc87adff409)
 
 
 ## How to Build
 
-This firmware uses the Arduino platform to simplify the build process. I built it on a MacBook Pro with an M1 chip.
+This firmware uses the Arduino platform to simplify the build process. 
 
 1. Install the Arduino IDE.
 2. Add support for CH552G:
    - Go to Preferences -> Additional Board Manager.
    - Add https://raw.githubusercontent.com/DeqingSun/ch55xduino/ch55xduino/package_ch55xduino_mcs51_index.json.
-3. Open the project `ch552g_mini_keyboard.ino`.
+3. Open the project `ch552g_usb_keyboard_UARTcontrolled.ino`.
    - In the Tools menu, select CH55xDuino board.
    - In Tools, select bootloader: P3.6 (D+) Pull up.
    - In Tools, select clock source: 16MHz (internal) 3.5V or 5V.
@@ -69,320 +61,67 @@ This firmware as can setup keyboard in different configuration.
 Edit configuration.cpp to change it
 To change configuration keep press rotary encoder and change configuration.
 
-On configurtion is possible to send keyboard or mous event and setup automatic cycle rutine
-
-![Menu](img/key_menu.gif?raw=true)
-
-Current configuration
+In this case only one configuration provided, you can change it for any needs
+Current configuration for Android HU & CarPlay
 ```C
+#include "configuration.h"
+#include "src/userUsbHidKeyboardMouse/USBHIDKeyboardMouse.h"
+
 const keyboard_configuration_t configurations[NUM_CONFIGURATION] = {
     {
-        .button = { // Configuration copy paste keyboard
+        .button = { // Custom configuration
             [BTN_1] = {
                 .type = BUTTON_SEQUENCE,
                 .function.sequence = {
-                    .sequence = {KEY_LEFT_CTRL, 'c'}, // ctrl + c
-                    .length = 2,            // Lengh of sequence
-                    .delay = 0             // no delay
+                    .sequence = {KEY_TAB}, // TAB
+                    .length = 1,
+                    .delay = 0
                 }
             },
-            [BTN_2] = {
+            [BTN_2] = { 
                 .type = BUTTON_SEQUENCE,
                 .function.sequence = {
-                    .sequence = {KEY_LEFT_CTRL, 'v'}, // ctrl + v
-                    .length = 2,            // Lengh of sequence
-                    .delay = 0             // no delay
+                    .sequence = {KEY_ESC}, // ESC
+                    .length = 1,
+                    .delay = 0
                 }
             },
             [BTN_3] = {
                 .type = BUTTON_SEQUENCE,
                 .function.sequence = {
-                    .sequence = {KEY_LEFT_CTRL, 'z'}, // ctrl + z
-                    .length = 2,            // Lengh of sequence
-                    .delay = 0             // no delay
-                }
-            },
-            [ENC_CW] = { // scroll up
-                .type = BUTTON_MOUSE,
-                .function.mouse = {
-                    .mouse_event_sequence = {
-                        {
-                            .type = SCROLL_DOWN,
-                            .value = 2
-                        }
-                    },
+                    .sequence = {KEY_DOWN_ARROW}, // 
                     .length = 1,
-                    .delay = 0,
-                    .keypress = 0 // Valore della pressione del tasto del mouse
+                    .delay = 0
                 }
             },
-            [ENC_CCW] = {   // scroll down
-                .type = BUTTON_MOUSE,
-                .function.mouse = {
-                    .mouse_event_sequence = {
-                        {
-                            .type = SCROLL_UP,
-                            .value = 2
-                        }
-                    },
-                    .length = 1,
-                    .delay = 0,
-                    .keypress = 0 // Valore della pressione del tasto del mouse
-                }
-            },
-            [BTN_ENC] = {
-                .type = BUTTON_FUNCTION,
-                .function.functionPointer = keyboard_press_enc,
-            },
-        }
-    },
-    {   // Configuration photoshop
-        .button = { // 
-            [BTN_1] = {
+            [ENC_CW] = { 
                 .type = BUTTON_SEQUENCE,
                 .function.sequence = {
-                    .sequence = {'e'}, // e
-                    .length = 1,            // Lengh of sequence
-                    .delay = 0             // no delay
+                    .sequence = {KEY_RIGHT_ARROW},
+                    .length = 1,
+                    .delay = 0
                 }
             },
-            [BTN_2] = {
+            [ENC_CCW] = { 
                 .type = BUTTON_SEQUENCE,
                 .function.sequence = {
-                    .sequence = {'s'}, // s
-                    .length = 1,            // Lengh of sequence
-                    .delay = 0             // no delay
-                }
-            },
-            [BTN_3] = {
-                .type = BUTTON_MOUSE,
-                .function.mouse = {
-                    .mouse_event_sequence = {
-                        {
-                            .type = LEFT_CLICK,
-                            .value = 1
-                        }
-                    },
+                    .sequence = {KEY_LEFT_ARROW},
                     .length = 1,
-                    .delay = 0,
-                    .keypress = KEY_LEFT_ALT // Valore della pressione del tasto del mouse
+                    .delay = 0
                 }
             },
-            [ENC_CW] = {
-                .type = BUTTON_MOUSE,
-                .function.mouse = {
-                    .mouse_event_sequence = {
-                        {
-                            .type = SCROLL_UP,
-                            .value = 1
-                        }
-                    },
-                    .length = 1,
-                    .delay = 0,
-                    .keypress = KEY_LEFT_ALT // Valore della pressione del tasto del mouse
-                }
-            },
-            [ENC_CCW] = {
-                .type = BUTTON_MOUSE,
-                .function.mouse = {
-                    .mouse_event_sequence = {
-                        {
-                            .type = SCROLL_DOWN,
-                            .value = 1
-                        }
-                    },
-                    .length = 1,
-                    .delay = 0,
-                    .keypress = KEY_LEFT_ALT // Valore della pressione del tasto del mouse
-                }
-            },
-            [BTN_ENC] = {
-                .type = BUTTON_FUNCTION,
-                .function.functionPointer = keyboard_press_enc,
-            },
-        }
-    },
-    {   // Configuration game
-        .button = { // 
-            [BTN_1] = {
+            [BTN_ENC] = { 
                 .type = BUTTON_SEQUENCE,
                 .function.sequence = {
-                    .sequence = {'a','a','a','a'}, // multi a
-                    .length = 4,            // Lengh of sequence
-                    .delay = 50             // no delay
+                    .sequence = {KEY_RETURN},
+                    .length = 2,
+                    .delay = 0
                 }
-            },
-            [BTN_2] = {
-                .type = BUTTON_SEQUENCE,
-                .function.sequence = {
-                    .sequence = {'b','b','b','b','b','b','b','b'}, // multi b
-                    .length = 8,            // Lengh of sequence
-                    .delay = 50             // no delay
-                }
-            },
-            [BTN_3] = {
-                .type = BUTTON_MOUSE,
-                .function.mouse = { //multi click
-                    .mouse_event_sequence = {
-                        {
-                            .type = LEFT_CLICK,
-                            .value = 1
-                        },
-                        {
-                            .type = LEFT_CLICK,
-                            .value = 1
-                        },
-                        {
-                            .type = LEFT_CLICK,
-                            .value = 1
-                        },
-                        {
-                            .type = LEFT_CLICK,
-                            .value = 1
-                        },
-                        {
-                            .type = LEFT_CLICK,
-                            .value = 1
-                        }
-                    },
-                    .length = 5,
-                    .delay = 0,
-                    .keypress = KEY_LEFT_ALT // Valore della pressione del tasto del mouse
-                }
-            },
-            [ENC_CW] = {
-                .type = BUTTON_MOUSE,
-                .function.mouse = {
-                    .mouse_event_sequence = {
-                        {
-                            .type = SCROLL_UP,
-                            .value = 1
-                        }
-                    },
-                    .length = 1,
-                    .delay = 0,
-                    .keypress = KEY_LEFT_ALT // Valore della pressione del tasto del mouse
-                }
-            },
-            [ENC_CCW] = {
-                .type = BUTTON_MOUSE,
-                .function.mouse = {
-                    .mouse_event_sequence = {
-                        {
-                            .type = SCROLL_DOWN,
-                            .value = 1
-                        }
-                    },
-                    .length = 1,
-                    .delay = 0,
-                    .keypress = KEY_LEFT_ALT // Valore della pressione del tasto del mouse
-                }
-            },
-            [BTN_ENC] = {
-                .type = BUTTON_FUNCTION,
-                .function.functionPointer = keyboard_press_enc,
             },
         }
-    },
-    {   // Automatic keyboard
-        .button = { // 
-            [BTN_1] = {
-                .type = BUTTON_AUTO_KEYBOARD,
-                .function.sequence = {
-                    .sequence = {'#', 'i', 'n', 'c', 'l', 'u', 'd', 'e', ' ', '<', 's', 't', 'd', 'i', 'o', '.', 'h', '>', '\n', '\n', 'i', 'n', 't', ' ', 'm', 'a', 'i', 'n', '(', ')', '\n', '{', '\n', ' ', ' ', ' ', 'p', 'r', 'i', 'n', 't', 'f', '(', '"', 'H', 'e', 'l', 'l', 'o', ' ', 'W', 'o', 'r', 'l', 'd', '"', ')', ';', '\n', '\n', ' ', ' ', ' ', 'r', 'e', 't', 'u', 'r', 'n', ' ', '0', ';', '\n', '}', '\n'}, // multi a
-                    .length = 73,            // Lengh of sequence
-                    .delay = 50             // no delay
-                }
-            },
-            [BTN_2] = {
-                .type = BUTTON_AUTO_MOUSE,
-                .function.mouse = { //multi click
-                    .mouse_event_sequence = {
-                        {
-                            .type = UP,
-                            .value = 40
-                        },
-                        {
-                            .type = RIGH,
-                            .value = 40
-                        },
-                        {
-                            .type = DOWN,
-                            .value = 40
-                        },
-                        {
-                            .type = LEFT,
-                            .value = 40
-                        }
-                    },
-                    .length = 4,
-                    .delay = 50,
-                    .keypress = 0 // Valore della pressione del tasto del mouse
-                }
-            },
-            [BTN_3] = {
-                .type = BUTTON_NULL,
-            },
-            [ENC_CW] = {
-                .type = BUTTON_MOUSE,
-                .function.mouse = {
-                    .mouse_event_sequence = {
-                        {
-                            .type = SCROLL_UP,
-                            .value = 1
-                        }
-                    },
-                    .length = 1,
-                    .delay = 0,
-                    .keypress = 0 // Valore della pressione del tasto del mouse
-                }
-            },
-            [ENC_CCW] = {
-                .type = BUTTON_MOUSE,
-                .function.mouse = {
-                    .mouse_event_sequence = {
-                        {
-                            .type = SCROLL_DOWN,
-                            .value = 1
-                        }
-                    },
-                    .length = 1,
-                    .delay = 0,
-                    .keypress = 0 // Valore della pressione del tasto del mouse
-                }
-            },
-            [BTN_ENC] = {
-                .type = BUTTON_FUNCTION,
-                .function.functionPointer = keyboard_press_enc,
-            },
-        }
-    },
-    {   //Menu configuration
-        .button = { // Configurtion copy paste keyboard
-            [BTN_1] = {
-                .type = BUTTON_NULL,
-            },
-            [BTN_2] = {
-                .type = BUTTON_NULL,
-            },
-            [BTN_3] = {
-                .type = BUTTON_NULL,
-            },
-            [ENC_CW] = {
-                .type = BUTTON_FUNCTION,
-                .function.functionPointer = button_menu_up,
-            },
-            [ENC_CCW] = {
-                .type = BUTTON_FUNCTION,
-                .function.functionPointer = button_menu_down,
-            },
-            [BTN_ENC] = {
-                .type = BUTTON_FUNCTION,
-                .function.functionPointer = keyboard_press_enc,
-            },
-        }
-    },
+    }
 };
+
 ```
 
 ## Pinout
@@ -394,6 +133,8 @@ const keyboard_configuration_t configurations[NUM_CONFIGURATION] = {
 - ENCODER A: P31
 - ENCODER B: P30
 - LED: P34
+- UART1 RX P3.4
+- UART1 TX P3.2
 
 ## Additional resources
 
